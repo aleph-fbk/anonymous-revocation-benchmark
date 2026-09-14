@@ -1,0 +1,80 @@
+[workspace]
+members = [
+    "accumulators/common",
+    "accumulators/cl-rsa-b",
+]
+resolver = "2"
+
+[workspace.dependencies]
+common       = { path = "accumulators/common", version = "0.1.0" }
+cl-rsa-b     = { path = "accumulators/cl-rsa-b", version = "0.1.0" }
+unknown_order = { version = "0.10.1", default-features = false, features = ["openssl"] }
+blake3       = "1.5"
+rand         = "0.8"
+criterion    = { version = "0.5", features = ["html_reports"] }
+
+# ── Package ───────────────────────────────────────────────────────────────────
+
+[package]
+name    = "revocation-comparison-bench"
+version = "0.1.0"
+edition = "2021"
+
+# Mobile throttled runner (phases iv–vi)
+[[bin]]
+name = "mobile_bench"
+path = "src/main.rs"
+
+[dependencies]
+# ── Local RSA accumulator ─────────────────────────────────────────────────────
+cl-rsa-b     = { workspace = true }
+common       = { workspace = true }
+unknown_order = { workspace = true }
+blake3       = { workspace = true }
+openssl = { version = "0.10", features = ["vendored"] }
+
+# ── DockNetwork crypto stack (KB21 + BBS-2023 + BPP) ─────────────────────────
+vb_accumulator          = "0.21"
+bbs_plus                = "0.19"
+bulletproofs_plus_plus  = "0.3"
+short_group_sig         = "0.1"
+proof_system            = "0.26"
+dock_crypto_utils       = "0.17"
+
+# ── Arkworks (BLS12-381 pairing, field/group math) ───────────────────────────
+# "asm" enables x86-64 Montgomery-multiplication assembly in ark-ff, giving
+# 5–15× speedup for all BLS12-381 field/group operations (G1 scalar mult,
+# G2 scalar mult, pairings). Without it we get generic Rust (no SIMD).
+# Cargo feature-unification propagates "asm" to all transitive ark-ff users.
+ark-bls12-381  = { version = "0.4", features = ["curve"] }
+ark-ec         = "0.4"
+ark-ff         = { version = "0.4", features = ["asm"] }
+ark-std        = "0.4"
+ark-serialize  = "0.4"
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+rand       = { workspace = true }
+rand_core  = "0.6"
+# "asm" enables hardware SHA-256 on x86 (SHA-NI, runtime-detected) and on
+# aarch64 (SHA256H/SHA256H2, requires +sha2 target-feature — set in config.toml).
+sha2       = { version = "0.10", features = ["asm"] }
+p256       = { version = "0.13", features = ["ecdsa"] }
+blake2     = "0.10"
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name    = "server"
+harness = false
+
+[profile.release]
+opt-level     = 3
+lto           = "thin"
+codegen-units = 1
+strip         = "symbols"
+
+[profile.bench]
+opt-level = 3

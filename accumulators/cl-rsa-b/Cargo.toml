@@ -1,0 +1,9 @@
+[package]
+name    = "cl-rsa-b"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+blake3        = { workspace = true }
+common        = { workspace = true }
+unknown_order = { workspace = true }

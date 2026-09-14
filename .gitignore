@@ -1,0 +1,22 @@
+# Rust build artifacts
+/target
+
+# longfellow-zk clone + dependency builds
+# (populated by scripts/build_longfellow.sh; never committed)
+/vendor
+
+# Android cross-build output (scripts/android.sh build)
+/dist
+
+# Raw measurement output (scripts/android.sh run --csv, bench_longfellow.sh, ...)
+/results
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

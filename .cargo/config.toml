@@ -1,0 +1,42 @@
+[env]
+# Host builds link the system OpenSSL (via pkg-config) instead of building
+# OpenSSL from source. The vendored build requires Perl's Time::Piece module,
+# which isn't installed everywhere, and is unnecessary when a system
+# libssl-dev/openssl-devel is already present (see README Install).
+#
+# Cargo only applies this when the var isn't already set in the shell (no
+# force = true here), so scripts/android.sh's `export OPENSSL_NO_VENDOR=0`
+# still wins for cross-compiling to Android, where there is no system libssl.
+OPENSSL_NO_VENDOR = "1"
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=native"]
+
+[target.aarch64-unknown-linux-gnu]
+# Native AArch64 (Termux / ARM server).  No AVX2; use ARM crypto extensions.
+rustflags = ["-C", "target-feature=+neon,+aes,+sha2,+sha3,+crc,+lse,+rdm,+dotprod"]
+
+[target.aarch64-linux-android]
+# Android cross-compilation target.
+#
+# ark-ff's "asm" feature is guarded by #[cfg(target_arch = "x86_64")] and
+# does nothing here.  The sha2 crate's aarch64 asm (SHA256H/SHA256H2) IS
+# active when "asm" feature is enabled — see Cargo.toml — but requires +sha2.
+#
+# These features are safe on every Android 10+ device (ARMv8.2 baseline):
+#   +neon    SIMD for LLVM auto-vectorisation of field arithmetic
+#   +aes     AES hardware (OpenSSL vendored build uses this for bn_asm)
+#   +sha2    SHA-256 hardware (sha2 crate asm backend)
+#   +sha3    SHA-512/224 etc.
+#   +crc     CRC32 acceleration
+#   +lse     Large System Extensions – atomic ops (ARMv8.1)
+#   +rdm     Rounding Double Multiply (ARMv8.1)
+#   +dotprod Integer dot product (ARMv8.2)
+#
+# For Pixel 10 Pro (Tensor G5, Cortex-X4 prime core) set the env var
+#   ANDROID_TARGET_CPU=cortex-x4
+# before calling android.sh build to additionally target the prime core ISA.
+# When that var is set, android.sh also pins the run to CPU7 by default.
+rustflags = [
+    "-C", "target-feature=+neon,+aes,+sha2,+sha3,+crc,+lse,+rdm,+dotprod",
+]
